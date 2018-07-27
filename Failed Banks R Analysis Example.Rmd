@@ -1,0 +1,77 @@
+---
+title: "July 2018 Failed Bank Analysis Comparison"
+output:
+  word_document: default
+  html_notebook: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+![](C:\Users\Andrew\Documents\Fuzzy Logic\Logo\Fuzzy_Logic01.jpg) 
+
+In this example, I will demonstrate some quick usage of the R Markdown language to analyze the [FDIC Failed Bank List](https://catalog.data.gov/dataset/fdic-failed-bank-list). This analysis will only scratch the surface of R, but it does take some time to build.. 
+
+#Intro
+First, let's take a quick look at the data:
+
+```{r, echo=FALSE}
+setwd("~/Fuzzy Logic/Workflow Examples/2018-07-26")
+
+```
+
+
+```{r error=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+install.packages("dplyr")
+install.packages("ggplot2")
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+banklist <- read.csv("banklist.csv", header = TRUE)
+banklist_df <- data.frame(banklist)
+head(banklist_df, 20)
+count(banklist_df)
+```
+
+#Relevancy
+We can get a good idea of what all is going on by just the first twenty rows out of 500+ rows of data. But how relevant is the data?
+
+```{r, comment="##"}
+# We can see the last time the data was updated...
+banklist_df$Updated.Date <- as.Date(banklist_df$Updated.Date, format = "%d-%b-%y")
+## Max Data Update Date
+max(sort(banklist_df$Updated.Date, decreasing = TRUE))
+
+#...And do the same for the last closing date
+banklist_df$Closing.Date <- as.Date(banklist_df$Closing.Date, format = "%d-%b-%y")
+## Last Failed Bank Close Date
+max(sort(banklist_df$Closing.Date, decreasing = TRUE))
+```
+
+#Analysis
+So the data has been maintained pretty recently and the last bank closing listed was December of 2017. Not too terrible. Lastly, I'll show a quick plot of the number of failed banks by state:
+
+```{r, echo=FALSE}
+colnames(banklist_df)
+State_counts <- banklist_df %>%
+  group_by(ST) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+State_counts
+```
+
+```{r, echo=FALSE}
+Top10 <- head(State_counts, 10)
+p <- ggplot(Top10, aes(y=Top10$count, x=ST, fill=ST)) + 
+    geom_col() +
+  ylab("Count of Failed Banks")+
+  xlab("States")
+  
+p + 
+  labs(title = "Top 10 Failed Banks by State") + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+All of this code was written rather hastily in under an hour. Again, I am only scratching the surface of what is possible, but it does take a bit of understanding in R to make this. Someone who uses R frequently could probably mock this up in under 10 minutes, but I'll admit it took me a good 20 as I have to remember certain functions and their arguments.
